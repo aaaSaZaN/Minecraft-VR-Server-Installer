@@ -310,29 +310,78 @@ function Handle-ExistingInstall ($composeCmd, $serverDir) {
     return $false
 }
 
-function Create-DesktopShortcuts ($composeCmd, $serverDir) {
+function Create-DesktopShortcuts ($composeCmd, $serverDir, $clientModsDir, $serverModsDir) {
     $desktopPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop))
     if (-not (Test-Path $desktopPath)) {
         $desktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::UserProfile)
     }
     
-    Write-Host "`n$COLOR_INFO[*] Создание ярлыков для удобного управления на Рабочем столе...$COLOR_RESET"
+    Write-Host "`n$COLOR_INFO[*] Создание панели управления на Рабочем столе...$COLOR_RESET"
     
-    $startBat = Join-Path $desktopPath "Minecraft_VR_Server_START.bat"
-    $stopBat = Join-Path $desktopPath "Minecraft_VR_Server_STOP.bat"
-    
+    $controlBat = Join-Path $desktopPath "Minecraft_Server_Control.bat"
     $cmdPrefix = $composeCmd -join " "
     
-    # Write files with UTF-8
-    $startContent = "@echo off`r`nchcp 65001 > nul`r`ncd /d `"$serverDir`"`r`n$cmdPrefix up -d`r`necho [✓] Minecraft VR Server started!`r`npause`r`n"
-    $stopContent = "@echo off`r`nchcp 65001 > nul`r`ncd /d `"$serverDir`"`r`n$cmdPrefix down`r`necho [✓] Minecraft VR Server stopped!`r`npause`r`n"
-    
-    [System.IO.File]::WriteAllText($startBat, $startContent, [System.Text.Encoding]::UTF8)
-    [System.IO.File]::WriteAllText($stopBat, $stopContent, [System.Text.Encoding]::UTF8)
-    
-    Write-Host "$COLOR_SUCCESS[✓] Созданы файлы управления на Рабочем столе:$COLOR_RESET"
-    Write-Host "    - Запуск: $startBat"
-    Write-Host "    - Остановка: $stopBat"
+    # Generate interactive batch file content
+    $controlContent = @"
+@echo off
+chcp 65001 > nul
+:menu
+cls
+echo =================================================
+echo    УПРАВЛЕНИЕ MINECRAFT VR СЕРВЕРОМ
+echo =================================================
+echo 1] Запустить сервер
+echo 2] Остановить сервер
+echo 3] Перенастроить сервер (версия, ОЗУ, порт и т.д.)
+echo 4] Посмотреть логи сервера
+echo 5] Открыть папку с модами для клиентов (VR/Voice)
+echo 6] Открыть папку с модами сервера (для плагинов)
+echo 7] Выйти
+echo =================================================
+set /p choice="Выберите действие (1-7): "
+
+if "%choice%"=="1" (
+    echo Запуск сервера...
+    cd /d "$serverDir"
+    $cmdPrefix up -d
+    pause
+    goto menu
+)
+if "%choice%"=="2" (
+    echo Остановка сервера...
+    cd /d "$serverDir"
+    $cmdPrefix down
+    pause
+    goto menu
+)
+if "%choice%"=="3" (
+    echo Запуск перенастройки сервера...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/aaaSaZaN/Minecraft-VR-Server-Installer/master/setup.ps1 | iex"
+    pause
+    goto menu
+)
+if "%choice%"=="4" (
+    echo Логи сервера (нажмите Ctrl+C для выхода)...
+    cd /d "$serverDir"
+    $cmdPrefix logs -f minecraft-server
+    goto menu
+)
+if "%choice%"=="5" (
+    explorer "$clientModsDir"
+    goto menu
+)
+if "%choice%"=="6" (
+    explorer "$serverModsDir"
+    goto menu
+)
+if "%choice%"=="7" (
+    exit
+)
+goto menu
+"@
+
+    [System.IO.File]::WriteAllText($controlBat, $controlContent, [System.Text.Encoding]::UTF8)
+    Write-Host "$COLOR_SUCCESS[✓] Создан ярлык управления: $controlBat$COLOR_RESET"
 }
 
 # --- MAIN FLOW ---
@@ -484,7 +533,7 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 try {
-    Create-DesktopShortcuts $composeCmd $serverDir
+    Create-DesktopShortcuts $composeCmd $serverDir $clientModsDir $serverModsDir
 } catch {
     Write-Host "$COLOR_WARN[!] Ошибка создания ярлыков на Рабочем столе: $_$COLOR_RESET"
 }
@@ -495,21 +544,4 @@ Write-Host "`n$COLOR_TITLE$COLOR_BOLD===========================================
 Write-Host "                 УСТАНОВКА УСПЕШНО ЗАВЕРШЕНА!                "
 Write-Host "=============================================================$COLOR_RESET"
 Write-Host "`n$COLOR_BOLD📍 IP-адрес для подключения игроков в локальной сети:$COLOR_RESET"
-Write-Host "   $COLOR_SUCCESS$COLOR_BOLD${localIp}:$serverPort$COLOR_RESET"
-
-if ($vrEnabled) {
-    Write-Host "`n$COLOR_BOLD🎮 Инструкция для VR-игроков (клиент):$COLOR_RESET"
-    Write-Host "   1. Скачанные моды для вашего клиента находятся в папке:"
-    Write-Host "      $COLOR_INFO$clientModsDir$COLOR_RESET"
-    Write-Host "   2. Скопируйте ВСЕ файлы из этой папки в ваш каталог $COLOR_BOLD.minecraft/mods$COLOR_RESET"
-    Write-Host "      (на ПК в Prism Launcher, CurseForge или официальном лаунчере с установленным $($loaderType.substring(0,1).ToUpper() + $loaderType.substring(1)))"
-    Write-Host "   3. Для игры в VR убедитесь, что вы запускаете игру через VR-шлем (SteamVR / Link / Virtual Desktop)!"
-    if ($voiceEnabled) {
-        Write-Host "   4. Голосовой чат (Simple Voice Chat) автоматически настроен. В игре нажмите клавишу $COLOR_BOLD'V'$COLOR_RESET для настроек микрофона."
-    }
-}
-
-Write-Host "`n$COLOR_BOLD🔧 Управление сервером:$COLOR_RESET"
-Write-Host "   - Остановить сервер: перейти в папку ${COLOR_INFO}server/$COLOR_RESET и ввести: $COLOR_BOLD$($composeCmd -join ' ') down$COLOR_RESET"
-Write-Host "   - Посмотреть логи сервера: $COLOR_BOLD$($composeCmd -join ' ') logs -f minecraft-server$COLOR_RESET"
-Write-Host "`n${COLOR_SUCCESS}Приятной игры в виртуальной реальности! 🚀$COLOR_RESET`n"
+Write-Host "   $COLOR_SUCCESS$COLOR_BOLD${localIp}:$serverPort$COLOR_RESET`n"
