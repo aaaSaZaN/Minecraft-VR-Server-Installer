@@ -359,10 +359,15 @@ $controlContent = @"
 
 @echo off
 chcp 65001 > nul
+
+for /f "usebackq tokens=*" %%a in (`powershell -NoProfile -Command "(Get-NetIPAddress -AddressFamily IPv4 | Where-Object { `$_.IPAddress -notlike '127.*' -and `$_.IPAddress -notlike '169.254.*' } | Select-Object -First 1).IPAddress"`) do set LOCAL_IP=%%a
+
 :menu
 cls
 echo =================================================
 echo    УПРАВЛЕНИЕ MINECRAFT VR СЕРВЕРОМ
+echo =================================================
+echo IP для подключения: %LOCAL_IP%:$serverPort
 echo =================================================
 echo 1] Запустить сервер
 echo 2] Остановить сервер
