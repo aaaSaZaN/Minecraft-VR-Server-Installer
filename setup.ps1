@@ -23,6 +23,9 @@ $COLOR_RESET   = "$ESC[0m"
 $OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
+# Force TLS 1.2 for modern web requests (fixes Forge Maven download error)
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 function Show-Banner {
     $banner = @"
 $COLOR_TITLE$COLOR_BOLD=============================================================
