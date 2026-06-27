@@ -362,6 +362,8 @@ if ($null -eq $composeCmd) {
 $defaultInstallDir = Get-Location
 if ($defaultInstallDir.Path -like "*\System32*" -or $defaultInstallDir.Path -like "*\system32*" -or $defaultInstallDir.Path -eq "C:\Windows" -or $defaultInstallDir.Path -eq "C:\WINDOWS") {
     $defaultInstallDir = "C:\Minecraft-VR-Server"
+} elseif ($defaultInstallDir.Path.EndsWith("Minecraft-VR-Server") -or $defaultInstallDir.Path.EndsWith("Minecraft-VR-Server\")) {
+    $defaultInstallDir = $defaultInstallDir.Path
 } else {
     $defaultInstallDir = Join-Path $defaultInstallDir.Path "Minecraft-VR-Server"
 }
