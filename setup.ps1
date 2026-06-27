@@ -1,11 +1,25 @@
+# --- Enable ANSI/VT100 on Windows (PowerShell 5.1 compatibility) ---
+try {
+    Add-Type -MemberDefinition @"
+[DllImport("kernel32.dll")] public static extern bool GetConsoleMode(IntPtr h, out uint m);
+[DllImport("kernel32.dll")] public static extern bool SetConsoleMode(IntPtr h, uint m);
+[DllImport("kernel32.dll")] public static extern IntPtr GetStdHandle(int h);
+"@ -Name 'Kernel32' -Namespace 'Win32' -ErrorAction SilentlyContinue
+    $stdOut = [Win32.Kernel32]::GetStdHandle(-11)
+    $mode   = 0
+    [Win32.Kernel32]::GetConsoleMode($stdOut, [ref]$mode) | Out-Null
+    [Win32.Kernel32]::SetConsoleMode($stdOut, $mode -bor 4) | Out-Null
+} catch {}
+
 # --- ANSI Colors for Premium CLI Look ---
-$COLOR_TITLE = "`033[95m"   # Purple
-$COLOR_INFO = "`033[94m"    # Blue
-$COLOR_SUCCESS = "`033[92m" # Green
-$COLOR_WARN = "`033[93m"    # Yellow
-$COLOR_FAIL = "`033[91m"    # Red
-$COLOR_BOLD = "`033[1m"
-$COLOR_RESET = "`033[0m"
+$ESC           = [char]27
+$COLOR_TITLE   = "$ESC[95m"  # Purple
+$COLOR_INFO    = "$ESC[94m"  # Blue
+$COLOR_SUCCESS = "$ESC[92m"  # Green
+$COLOR_WARN    = "$ESC[93m"  # Yellow
+$COLOR_FAIL    = "$ESC[91m"  # Red
+$COLOR_BOLD    = "$ESC[1m"
+$COLOR_RESET   = "$ESC[0m"
 
 # Ensure output encoding is UTF-8 for Russian text support
 $OutputEncoding = [System.Text.Encoding]::UTF8
@@ -43,24 +57,23 @@ function Get-Input ($prompt, $defaultValue) {
 
 function Check-Docker {
     Write-Host "`n$COLOR_INFO[*] Проверка Docker...$COLOR_RESET"
-    
+
     # Check docker command
-    $dockerVer = ""
     try {
         $res = Get-Command docker -ErrorAction SilentlyContinue
         if ($null -eq $res) {
-            return $null, "Docker не установлен."
+            return [PSCustomObject]@{ Cmd = $null; Err = "Docker не установлен." }
         }
         $dockerVer = & docker --version
         Write-Host "$COLOR_SUCCESS[✓] Найден Docker: $($dockerVer.Trim())$COLOR_RESET"
     } catch {
-        return $null, "Ошибка при вызове Docker."
+        return [PSCustomObject]@{ Cmd = $null; Err = "Ошибка при вызове Docker." }
     }
 
     # Check docker compose support
     $composeCmd = $null
     try {
-        & docker compose version > $null 2>&1
+        & docker compose version 2>&1 | Out-Null
         if ($LASTEXITCODE -eq 0) {
             $composeCmd = @("docker", "compose")
             Write-Host "$COLOR_SUCCESS[✓] Найден встроенный Docker Compose$COLOR_RESET"
@@ -69,7 +82,7 @@ function Check-Docker {
 
     if ($null -eq $composeCmd) {
         try {
-            & docker-compose --version > $null 2>&1
+            & docker-compose --version 2>&1 | Out-Null
             if ($LASTEXITCODE -eq 0) {
                 $composeCmd = @("docker-compose")
                 Write-Host "$COLOR_SUCCESS[✓] Найден классический docker-compose$COLOR_RESET"
@@ -78,10 +91,22 @@ function Check-Docker {
     }
 
     if ($null -eq $composeCmd) {
-        return $null, "Docker Compose не найден. Пожалуйста, установите Docker Compose."
+        return [PSCustomObject]@{ Cmd = $null; Err = "Docker Compose не найден. Пожалуйста, установите Docker Compose." }
     }
 
-    return $composeCmd, $null
+    return [PSCustomObject]@{ Cmd = $composeCmd; Err = $null }
+}
+
+# Helper: надёжный запуск docker / docker-compose с любым числом аргументов
+function Invoke-Compose ($composeCmd, $arguments, $workingDir) {
+    $extraArgs = if ($composeCmd.Count -gt 1) { $composeCmd[1..($composeCmd.Count - 1)] } else { @() }
+    $allArgs   = (@($extraArgs) + @($arguments)) | Where-Object { $null -ne $_ }
+    Push-Location $workingDir
+    try {
+        & $composeCmd[0] @allArgs
+    } finally {
+        Pop-Location
+    }
 }
 
 function Install-Docker {
@@ -241,7 +266,7 @@ function Handle-ExistingInstall ($composeCmd, $serverDir) {
     $choice = Get-Input "Введите вариант (1-4)" "1"
     if ($choice -eq "1") {
         Write-Host "`n$COLOR_INFO[*] Запуск сервера...$COLOR_RESET"
-        Start-Process $composeCmd[0] -ArgumentList $composeCmd[1..($composeCmd.Length-1)] + @("up", "-d") -WorkingDirectory $serverDir -NoNewWindow -Wait
+        Invoke-Compose $composeCmd @("up", "-d") $serverDir
         if ($LASTEXITCODE -eq 0) {
             Write-Host "$COLOR_SUCCESS[✓] Сервер успешно запущен в фоновом режиме.$COLOR_RESET"
             $localIp = Get-LocalIP
@@ -263,7 +288,7 @@ function Handle-ExistingInstall ($composeCmd, $serverDir) {
         return $true
     } elseif ($choice -eq "2") {
         Write-Host "`n$COLOR_INFO[*] Остановка сервера...$COLOR_RESET"
-        Start-Process $composeCmd[0] -ArgumentList $composeCmd[1..($composeCmd.Length-1)] + @("down") -WorkingDirectory $serverDir -NoNewWindow -Wait
+        Invoke-Compose $composeCmd @("down") $serverDir
         if ($LASTEXITCODE -eq 0) {
             Write-Host "$COLOR_SUCCESS[✓] Сервер успешно остановлен.$COLOR_RESET"
         } else {
@@ -273,7 +298,7 @@ function Handle-ExistingInstall ($composeCmd, $serverDir) {
     } elseif ($choice -eq "3") {
         Write-Host "`n$COLOR_INFO[*] Загрузка логов (нажмите Ctrl+C для выхода)...$COLOR_RESET"
         try {
-            Start-Process $composeCmd[0] -ArgumentList $composeCmd[1..($composeCmd.Length-1)] + @("logs", "-f", "minecraft-server") -WorkingDirectory $serverDir -NoNewWindow -Wait
+            Invoke-Compose $composeCmd @("logs", "-f", "minecraft-server") $serverDir
         } catch {
             Write-Host "`n Выход из просмотра логов."
         }
@@ -314,8 +339,8 @@ function Create-DesktopShortcuts ($composeCmd, $serverDir) {
 Show-Banner
 
 $res = Check-Docker
-$composeCmd = $res[0]
-$err = $res[1]
+$composeCmd = $res.Cmd
+$err = $res.Err
 
 if ($null -eq $composeCmd) {
     Write-Host "$COLOR_FAIL[✕] Проверка Docker провалена: $err$COLOR_RESET"
@@ -326,7 +351,7 @@ if ($null -eq $composeCmd) {
     }
     # Check again
     $res = Check-Docker
-    $composeCmd = $res[0]
+    $composeCmd = $res.Cmd
     if ($null -eq $composeCmd) {
         Write-Host "$COLOR_FAILDocker был установлен, но всё ещё не обнаруживается в текущей сессии консоли.$COLOR_RESET"
         Write-Host "$COLOR_WARNПерезапустите консоль/компьютер и запустите скрипт заново.$COLOR_RESET"
@@ -425,7 +450,7 @@ if ($vrEnabled) {
 Write-Host "`n$COLOR_INFO[*] Запуск Docker контейнера с сервером Майнкрафт...$COLOR_RESET"
 Write-Host "$COLOR_INFO    (Это может занять некоторое время при первом запуске, скачивается образ)$COLOR_RESET"
 
-Start-Process $composeCmd[0] -ArgumentList $composeCmd[1..($composeCmd.Length-1)] + @("up", "-d") -WorkingDirectory $serverDir -NoNewWindow -Wait
+Invoke-Compose $composeCmd @("up", "-d") $serverDir
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "`n$COLOR_SUCCESS[✓] Сервер Майнкрафт успешно запущен в фоновом режиме Docker!$COLOR_RESET"
