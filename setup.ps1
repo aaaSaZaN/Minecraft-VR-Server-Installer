@@ -360,7 +360,8 @@ $controlContent = @"
 @echo off
 chcp 65001 > nul
 
-for /f "usebackq tokens=*" %%a in (`powershell -NoProfile -Command "(Get-NetIPAddress -AddressFamily IPv4 | Where-Object { `$_.IPAddress -notlike '127.*' -and `$_.IPAddress -notlike '169.254.*' } | Select-Object -First 1).IPAddress"`) do set LOCAL_IP=%%a
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /i "IPv4"') do set LOCAL_IP=%%a
+set LOCAL_IP=%LOCAL_IP: =%
 
 :menu
 cls
@@ -386,14 +387,10 @@ if "%choice%"=="1" (
 )
 if "%choice%"=="2" (
     echo.
-    echo [ВНИМАНИЕ] Для безопасного выключения сервера перейдите в его окно и напишите 'stop'.
-    echo Если вы хотите принудительно убить зависший сервер (может повредить мир):
-    set /p kill="Убить процесс сервера принудительно? (y/n): "
-    if /i "%kill%"=="y" (
-        echo Выключение сервера...
-        taskkill /FI "WINDOWTITLE eq Minecraft VR Server" /F /T >nul 2>&1
-        echo Сервер принудительно остановлен!
-    )
+    echo [ИНФОРМАЦИЯ] Чтобы безопасно выключить и сохранить сервер, 
+    echo напишите команду 'stop' в черную командную строку запущенного сервера.
+    echo Либо вы можете просто закрыть окно сервера крестиком, но это менее безопасно.
+    echo.
     pause
     goto menu
 )
