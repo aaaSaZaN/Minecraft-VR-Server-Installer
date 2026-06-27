@@ -386,32 +386,39 @@ if (Handle-ExistingInstall $composeCmd $serverDir) {
 Write-Host "`n$COLOR_BOLD=== НАСТРОЙКА MINECRAFT СЕРВЕРА ===$COLOR_RESET`n"
 
 $mcVersion = Get-Input "Введите версию Minecraft" "1.20.1"
+if ([string]::IsNullOrWhiteSpace($mcVersion)) { $mcVersion = "1.20.1" }
 
 Write-Host "`nВыберите ядро (мод-лоадер):"
 Write-Host "1) ${COLOR_INFO}Forge$COLOR_RESET (Стандартное ядро для QuestCraft)"
 Write-Host "2) ${COLOR_INFO}Fabric$COLOR_RESET"
 Write-Host "3) ${COLOR_INFO}NeoForge$COLOR_RESET"
 $loaderChoice = Get-Input "Выберите вариант (1-3)" "1"
+if ([string]::IsNullOrWhiteSpace($loaderChoice)) { $loaderChoice = "1" }
 
 $loaderType = "forge"
 if ($loaderChoice -eq "2") { $loaderType = "fabric" }
 if ($loaderChoice -eq "3") { $loaderType = "neoforge" }
 
 $ramGb = Get-Input "Сколько ГБ оперативной памяти выделить серверу" "4"
+if ([string]::IsNullOrWhiteSpace($ramGb)) { $ramGb = "4" }
 if (-not $ramGb.EndsWith("G") -and -not $ramGb.EndsWith("M")) {
     $ramGb = "$($ramGb)G"
 }
 
 $onlineInput = Get-Input "Разрешить вход без лицензии (пиратский режим)? (y/n)" "y"
+if ([string]::IsNullOrWhiteSpace($onlineInput)) { $onlineInput = "y" }
 $onlineMode = "TRUE"
 if ($onlineInput.ToLower() -eq 'y') { $onlineMode = "FALSE" }
 
 $serverPort = Get-Input "Основной порт сервера" "25565"
+if ([string]::IsNullOrWhiteSpace($serverPort)) { $serverPort = "25565" }
 
 $voiceChatInput = Get-Input "Установить 3D Голосовой чат (Simple Voice Chat)? (y/n)" "y"
+if ([string]::IsNullOrWhiteSpace($voiceChatInput)) { $voiceChatInput = "y" }
 $voiceEnabled = $voiceChatInput.ToLower() -eq 'y'
 
 $vrModsInput = Get-Input "Скачать VR моды (Vivecraft, Iris, Sodium и др.)? (y/n)" "y"
+if ([string]::IsNullOrWhiteSpace($vrModsInput)) { $vrModsInput = "y" }
 $vrEnabled = $vrModsInput.ToLower() -eq 'y'
 
 # Create server directory
