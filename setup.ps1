@@ -111,7 +111,7 @@ function Invoke-Compose ($composeCmd, $arguments, $workingDir) {
 
 function Install-Docker {
     Write-Host "`n$COLOR_WARN[!] Docker не найден в вашей системе!$COLOR_RESET"
-    Write-Host "$COLOR_INFOМы можем попробовать установить Docker Desktop через Windows Winget (требуются права администратора).$COLOR_RESET"
+    Write-Host "${COLOR_INFO}Мы можем попробовать установить Docker Desktop через Windows Winget (требуются права администратора).$COLOR_RESET"
     
     $ans = Get-Input "Запустить установку Docker Desktop? (y/n)" "y"
     if ($ans.ToLower() -eq 'y') {
@@ -128,8 +128,8 @@ function Install-Docker {
             Write-Host "$COLOR_FAIL[✕] Утилита 'winget' не найдена в системе.$COLOR_RESET"
         }
     }
-    Write-Host "$COLOR_WARNПожалуйста, установите Docker Desktop вручную с официального сайта:$COLOR_RESET"
-    Write-Host "$COLOR_BOLDhttps://www.docker.com/products/docker-desktop/$COLOR_RESET"
+    Write-Host "${COLOR_WARN}Пожалуйста, установите Docker Desktop вручную с официального сайта:$COLOR_RESET"
+    Write-Host "${COLOR_BOLD}https://www.docker.com/products/docker-desktop/$COLOR_RESET"
     return $false
 }
 
@@ -172,7 +172,7 @@ function Fetch-ModrinthVersion ($slug, $mcVersion, $loader) {
         }
         return $matching[0]
     } catch {
-        Write-Host "  $COLOR_FAIL[✕] Ошибка запроса к Modrinth для $slug: $_$COLOR_RESET"
+        Write-Host "  $COLOR_FAIL[✕] Ошибка запроса к Modrinth для ${slug}: $_$COLOR_RESET"
         return $null
     }
 }
@@ -214,7 +214,7 @@ function Handle-Mods ($mcVersion, $loader, $voiceEnabled, $serverModsDir, $clien
     }
 
     foreach ($m in $modList) {
-        Write-Host "`n$COLOR_BOLDОбработка $($m.Name)...$COLOR_RESET"
+        Write-Host "`n${COLOR_BOLD}Обработка $($m.Name)...$COLOR_RESET"
         
         $vInfo = Fetch-ModrinthVersion $m.Slug $mcVersion $loader
         if ($null -eq $vInfo) {
@@ -258,10 +258,10 @@ function Handle-ExistingInstall ($composeCmd, $serverDir) {
     
     Write-Host "`n$COLOR_WARN[!] Обнаружена существующая установка сервера в папке $serverDir$COLOR_RESET"
     Write-Host "Выберите действие:"
-    Write-Host "1) $COLOR_SUCCESSЗапустить сервер$COLOR_RESET"
-    Write-Host "2) $COLOR_FAILОстановить сервер$COLOR_RESET"
-    Write-Host "3) $COLOR_INFOПосмотреть логи сервера$COLOR_RESET"
-    Write-Host "4) $COLOR_TITLEПеренастроить сервер (свежая установка)$COLOR_RESET"
+    Write-Host "1) ${COLOR_SUCCESS}Запустить сервер$COLOR_RESET"
+    Write-Host "2) ${COLOR_FAIL}Остановить сервер$COLOR_RESET"
+    Write-Host "3) ${COLOR_INFO}Посмотреть логи сервера$COLOR_RESET"
+    Write-Host "4) ${COLOR_TITLE}Перенастроить сервер (свежая установка)$COLOR_RESET"
     
     $choice = Get-Input "Введите вариант (1-4)" "1"
     if ($choice -eq "1") {
@@ -346,7 +346,7 @@ if ($null -eq $composeCmd) {
     Write-Host "$COLOR_FAIL[✕] Проверка Docker провалена: $err$COLOR_RESET"
     $success = Install-Docker
     if (-not $success) {
-        Write-Host "`n$COLOR_FAILПожалуйста, настройте Docker и запустите скрипт заново.$COLOR_RESET"
+        Write-Host "`n${COLOR_FAIL}Пожалуйста, настройте Docker и запустите скрипт заново.$COLOR_RESET"
         Exit 1
     }
     # Check again
@@ -456,7 +456,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "`n$COLOR_SUCCESS[✓] Сервер Майнкрафт успешно запущен в фоновом режиме Docker!$COLOR_RESET"
 } else {
     Write-Host "`n$COLOR_FAIL[✕] Не удалось запустить сервер через Docker Compose.$COLOR_RESET"
-    Write-Host "$COLOR_WARNВы можете попробовать запустить его вручную, перейдя в папку 'server' и выполнив: $COLOR_BOLD$($composeCmd -join ' ') up$COLOR_RESET"
+    Write-Host "${COLOR_WARN}Вы можете попробовать запустить его вручную, перейдя в папку 'server' и выполнив: $COLOR_BOLD$($composeCmd -join ' ') up$COLOR_RESET"
 }
 
 try {
@@ -486,6 +486,6 @@ if ($vrEnabled) {
 }
 
 Write-Host "`n$COLOR_BOLD🔧 Управление сервером:$COLOR_RESET"
-Write-Host "   - Остановить сервер: перейти в папку $COLOR_INFOserver/$COLOR_RESET и ввести: $COLOR_BOLD$($composeCmd -join ' ') down$COLOR_RESET"
+Write-Host "   - Остановить сервер: перейти в папку ${COLOR_INFO}server/$COLOR_RESET и ввести: $COLOR_BOLD$($composeCmd -join ' ') down$COLOR_RESET"
 Write-Host "   - Посмотреть логи сервера: $COLOR_BOLD$($composeCmd -join ' ') logs -f minecraft-server$COLOR_RESET"
-Write-Host "`n$COLOR_SUCCESSПриятной игры в виртуальной реальности! 🚀$COLOR_RESET`n"
+Write-Host "`n${COLOR_SUCCESS}Приятной игры в виртуальной реальности! 🚀$COLOR_RESET`n"
