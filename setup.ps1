@@ -526,7 +526,46 @@ Write-Host "$COLOR_INFO    (Это может занять некоторое в
 Invoke-Compose $composeCmd @("up", "-d") $serverDir
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "`n$COLOR_SUCCESS[✓] Сервер Майнкрафт успешно запущен в фоновом режиме Docker!$COLOR_RESET"
+    Write-Host "`n$COLOR_SUCCESS[✓] Контейнер Docker запущен. Проверяем старт сервера Minecraft...$COLOR_RESET"
+    
+    # Wait and verify server startup by parsing logs
+    Write-Host -NoNewline "$COLOR_INFO[*] Ожидание инициализации сервера (может занять до 1-2 минут): $COLOR_RESET"
+    $timeoutSeconds = 95
+    $startTime = Get-Date
+    $success = $false
+    $crashed = $false
+
+    while (((Get-Date) - $startTime).TotalSeconds -lt $timeoutSeconds) {
+        Start-Sleep -Seconds 3
+        Write-Host -NoNewline "."
+
+        # Check if container is still running
+        $isRunning = & docker inspect -f '{{.State.Running}}' mc-vr-server 2>$null
+        if ($isRunning -eq "false") {
+            $crashed = $true
+            break
+        }
+
+        # Fetch logs and scan for success/fail messages
+        $logs = & docker logs mc-vr-server 2>&1
+        if ($logs -match "Done \(" -or $logs -match "Running Delayed Initializations") {
+            $success = $true
+            break
+        }
+        if ($logs -match "Failed to start the minecraft server" -or $logs -match "Exception in thread" -or $logs -match "Crash report saved to") {
+            $crashed = $true
+            break
+        }
+    }
+
+    if ($success) {
+        Write-Host "`n$COLOR_SUCCESS[✓] Сервер Minecraft успешно запущен и готов к подключению!$COLOR_RESET"
+    } elseif ($crashed) {
+        Write-Host "`n$COLOR_FAIL[✕] Ошибка: Сервер Minecraft аварийно завершил работу (краш при запуске)!$COLOR_RESET"
+        Write-Host "$COLOR_WARNПожалуйста, проверьте логи, выбрав пункт 4 в панели управления на Рабочем столе.$COLOR_RESET"
+    } else {
+        Write-Host "`n$COLOR_WARN[!] Сервер запускается медленнее обычного, запуск продолжается в фоновом режиме.$COLOR_RESET"
+    }
 } else {
     Write-Host "`n$COLOR_FAIL[✕] Не удалось запустить сервер через Docker Compose.$COLOR_RESET"
     Write-Host "${COLOR_WARN}Вы можете попробовать запустить его вручную, перейдя в папку 'server' и выполнив: $COLOR_BOLD$($composeCmd -join ' ') up$COLOR_RESET"
