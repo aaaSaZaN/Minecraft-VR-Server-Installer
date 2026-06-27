@@ -1,4 +1,4 @@
-# --- Enable ANSI/VT100 on Windows (PowerShell 5.1 compatibility) ---
+﻿# --- Enable ANSI/VT100 on Windows (PowerShell 5.1 compatibility) ---
 try {
     Add-Type -MemberDefinition @"
 [DllImport("kernel32.dll")] public static extern bool GetConsoleMode(IntPtr h, out uint m);
@@ -325,6 +325,7 @@ Write-Host "`n$COLOR_INFO[*] Создание скриптов запуска...
 
 $startBatPath = Join-Path $serverDir "start.bat"
 $startContent = @"
+
 @echo off
 title Minecraft VR Server
 cd /d "%~dp0"
@@ -348,12 +349,14 @@ if ($loaderType -eq "fabric") {
     }
     $startContent += "`ncall run.bat`npause"
 }
+$startContent = $startContent -replace "`r`n", "`n" -replace "`n", "`r`n"
 Set-Content -Path $startBatPath -Value $startContent
 
 # Control Shortcut
 $desktopPath = [System.IO.Path]::Combine([System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop))
 $controlBat = Join-Path $desktopPath "Minecraft_Server_Control.bat"
 $controlContent = @"
+
 @echo off
 chcp 65001 > nul
 :menu
@@ -390,6 +393,7 @@ if "%choice%"=="4" (
 if "%choice%"=="5" exit
 goto menu
 "@
+$controlContent = $controlContent -replace "`r`n", "`n" -replace "`n", "`r`n"
 [System.IO.File]::WriteAllText($controlBat, $controlContent, [System.Text.Encoding]::UTF8)
 
 $localIp = "127.0.0.1"
