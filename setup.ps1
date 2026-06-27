@@ -30,7 +30,7 @@ function Show-Banner {
 $COLOR_TITLE$COLOR_BOLD=============================================================
     __  ___ _                                 __ _      ____ 
    /  |/  /(_)____   ___   _____  _____ ____ _/ //_/     / __ \
-  / /|_/ // // __ \ / _ \ / ___/ / ___// __ `/ __/ /| /| / /_/ /
+  / /|_/ // // __ \ / _ \ / ___/ / ___// __ ``/ __/ /| /| / /_/ /
  / /  / // // / / //  __// /__  / /   / /_/ / /_  / |/ |/ /_, _/ 
 /_/  /_//_//_/ /_/ \___/ \___/ /_/    \__,_/\__/  /__/|__/_/ |_|  
                                                              
@@ -360,6 +360,13 @@ if ($null -eq $composeCmd) {
 }
 
 $baseDir = Get-Location
+# Fallback to User's Desktop if running from a Windows system folder (e.g. System32) to avoid permission errors
+if ($baseDir.Path -like "*\System32*" -or $baseDir.Path -like "*\system32*" -or $baseDir.Path -eq "C:\Windows" -or $baseDir.Path -eq "C:\WINDOWS") {
+    $baseDir = Join-Path $env:USERPROFILE "Desktop\Minecraft-VR-Server"
+    $null = New-Item -ItemType Directory -Force -Path $baseDir
+    Set-Location $baseDir
+    Write-Host "${COLOR_INFO}[*] Запуск в системной папке обнаружен. Скрипт перенаправлен на Рабочий стол: $baseDir$COLOR_RESET"
+}
 $serverDir = Join-Path $baseDir "server"
 
 if (Handle-ExistingInstall $composeCmd $serverDir) {
