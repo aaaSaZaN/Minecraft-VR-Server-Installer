@@ -386,13 +386,13 @@ Write-Host "`n$COLOR_BOLD=== НАСТРОЙКА MINECRAFT СЕРВЕРА ===$COL
 $mcVersion = Get-Input "Введите версию Minecraft" "1.20.1"
 
 Write-Host "`nВыберите ядро (мод-лоадер):"
-Write-Host "1) ${COLOR_INFO}Fabric$COLOR_RESET (Рекомендуется для VR - лучшая совместимость и FPS)"
-Write-Host "2) ${COLOR_INFO}Forge$COLOR_RESET"
+Write-Host "1) ${COLOR_INFO}Forge$COLOR_RESET (Стандартное ядро для QuestCraft)"
+Write-Host "2) ${COLOR_INFO}Fabric$COLOR_RESET"
 Write-Host "3) ${COLOR_INFO}NeoForge$COLOR_RESET"
 $loaderChoice = Get-Input "Выберите вариант (1-3)" "1"
 
-$loaderType = "fabric"
-if ($loaderChoice -eq "2") { $loaderType = "forge" }
+$loaderType = "forge"
+if ($loaderChoice -eq "2") { $loaderType = "fabric" }
 if ($loaderChoice -eq "3") { $loaderType = "neoforge" }
 
 $ramGb = Get-Input "Сколько ГБ оперативной памяти выделить серверу" "4"
