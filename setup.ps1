@@ -188,7 +188,7 @@ function Download-File ($url, $destPath) {
         Write-Host "$COLOR_SUCCESS готово.$COLOR_RESET"
         return $true
     } catch {
-        Write-Host "`n  $COLOR_FAIL[✕] Ошибка скачивания $url: $_$COLOR_RESET"
+        Write-Host "`n  $COLOR_FAIL[✕] Ошибка скачивания ${url}: $_$COLOR_RESET"
         return $false
     }
 }
@@ -281,7 +281,7 @@ function Handle-ExistingInstall ($composeCmd, $serverDir) {
             } catch {}
             
             Write-Host "`n📍 IP-адрес для подключения игроков в локальной сети:"
-            Write-Host "   $COLOR_SUCCESS$COLOR_BOLD$localIp:$port$COLOR_RESET"
+            Write-Host "   $COLOR_SUCCESS$COLOR_BOLD${localIp}:$port$COLOR_RESET"
         } else {
             Write-Host "$COLOR_FAIL[✕] Не удалось запустить сервер.$COLOR_RESET"
         }
@@ -414,7 +414,7 @@ $composeLines = @(
 )
 
 if ($voiceEnabled) {
-    $composeLines += "      - `"$voicePort:$voicePort/udp`""
+    $composeLines += "      - `"${voicePort}:$voicePort/udp`""
 }
 
 $composeLines += @(
@@ -471,7 +471,7 @@ Write-Host "`n$COLOR_TITLE$COLOR_BOLD===========================================
 Write-Host "                 УСТАНОВКА УСПЕШНО ЗАВЕРШЕНА!                "
 Write-Host "=============================================================$COLOR_RESET"
 Write-Host "`n$COLOR_BOLD📍 IP-адрес для подключения игроков в локальной сети:$COLOR_RESET"
-Write-Host "   $COLOR_SUCCESS$COLOR_BOLD$localIp:$serverPort$COLOR_RESET"
+Write-Host "   $COLOR_SUCCESS$COLOR_BOLD${localIp}:$serverPort$COLOR_RESET"
 
 if ($vrEnabled) {
     Write-Host "`n$COLOR_BOLD🎮 Инструкция для VR-игроков (клиент):$COLOR_RESET"
