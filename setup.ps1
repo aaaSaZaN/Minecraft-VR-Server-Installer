@@ -483,7 +483,7 @@ $composeLines = @(
     "    image: itzg/minecraft-server:latest",
     "    container_name: mc-vr-server",
     "    ports:",
-    "      - `"$serverPort:25565`""
+    "      - `"${serverPort}:25565`""
 )
 
 if ($voiceEnabled) {
