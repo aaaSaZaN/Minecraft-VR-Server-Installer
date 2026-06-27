@@ -1,4 +1,4 @@
-# --- Enable ANSI/VT100 on Windows (PowerShell 5.1 compatibility) ---
+﻿# --- Enable ANSI/VT100 on Windows (PowerShell 5.1 compatibility) ---
 try {
     Add-Type -MemberDefinition @"
 [DllImport("kernel32.dll")] public static extern bool GetConsoleMode(IntPtr h, out uint m);
