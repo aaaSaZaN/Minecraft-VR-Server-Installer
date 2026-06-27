@@ -365,12 +365,14 @@ echo =================================================
 echo    УПРАВЛЕНИЕ MINECRAFT VR СЕРВЕРОМ
 echo =================================================
 echo 1] Запустить сервер
-echo 2] Поменять настройки (запустить установщик)
-echo 3] Открыть папку с модами
-echo 4] Открыть папку сервера
-echo 5] Выйти
+echo 2] Остановить сервер
+echo 3] Выдать админку (OP)
+echo 4] Поменять настройки (запустить установщик)
+echo 5] Открыть папку с модами
+echo 6] Открыть папку сервера
+echo 7] Выйти
 echo =================================================
-set /p choice="Выберите действие (1-5): "
+set /p choice="Выберите действие (1-7): "
 
 if "%choice%"=="1" (
     cd /d "$serverDir"
@@ -378,19 +380,41 @@ if "%choice%"=="1" (
     goto menu
 )
 if "%choice%"=="2" (
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/aaaSaZaN/Minecraft-VR-Server-Installer/master/setup.ps1 | iex"
+    echo.
+    echo [ВНИМАНИЕ] Для безопасного выключения сервера перейдите в его окно и напишите 'stop'.
+    echo Если вы хотите принудительно убить зависший сервер (может повредить мир):
+    set /p kill="Убить процесс сервера принудительно? (y/n): "
+    if /i "%kill%"=="y" (
+        echo Выключение сервера...
+        taskkill /FI "WINDOWTITLE eq Minecraft VR Server" /F /T >nul 2>&1
+        echo Сервер принудительно остановлен!
+    )
     pause
     goto menu
 )
 if "%choice%"=="3" (
-    explorer "$modsDir"
+    echo.
+    echo [ИНФОРМАЦИЯ] Для выдачи прав администратора:
+    echo Перейдите в открытое черное окно запущенного сервера и напишите:
+    echo op ВашНик
+    echo.
+    pause
     goto menu
 )
 if "%choice%"=="4" (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/aaaSaZaN/Minecraft-VR-Server-Installer/master/setup.ps1 | iex"
+    pause
+    goto menu
+)
+if "%choice%"=="5" (
+    explorer "$modsDir"
+    goto menu
+)
+if "%choice%"=="6" (
     explorer "$serverDir"
     goto menu
 )
-if "%choice%"=="5" exit
+if "%choice%"=="7" exit
 goto menu
 "@
 $controlContent = $controlContent -replace "`r`n", "`n" -replace "`n", "`r`n"
@@ -409,4 +433,4 @@ Write-Host "=============================================================$COLOR_
 Write-Host "`n$COLOR_BOLD📍 IP-адрес для подключения игроков в локальной сети:$COLOR_RESET"
 Write-Host "   $COLOR_SUCCESS$COLOR_BOLD${localIp}:$serverPort$COLOR_RESET"
 Write-Host "`nЯрлык управления создан на Рабочем столе: $COLOR_INFO$controlBat$COLOR_RESET`n"
-Write-Host "Теперь вы можете запустить сервер через меню ярлыка!"
+Write-Host "Теперь вы можете безопасно выключить и включить сервер через меню ярлыка!"
