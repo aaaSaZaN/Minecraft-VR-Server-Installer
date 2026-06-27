@@ -1,0 +1,10 @@
+{
+  "name": "minecraft-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "minecraft-protocol-forge": "github:PrismarineJS/node-minecraft-protocol-forge",
+    "mineflayer": "^4.22.0",
+    "mineflayer-pathfinder": "^2.4.5"
+  }
+}

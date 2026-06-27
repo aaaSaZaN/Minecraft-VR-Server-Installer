@@ -1,0 +1,24 @@
+# Large zip/tar archives
+*.zip
+*.tar.gz
+*.tar
+*.jar
+
+# Minecraft Server data directories (new and old)
+server/data/
+Server/data/
+mods/
+resourcepacks/
+client_mods/
+
+# Dependency folders
+node_modules/
+bot/node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Local search temporary files
+search.json
+search_res.json
