@@ -359,14 +359,22 @@ if ($null -eq $composeCmd) {
     }
 }
 
-$baseDir = Get-Location
-# Fallback to User's Desktop if running from a Windows system folder (e.g. System32) to avoid permission errors
-if ($baseDir.Path -like "*\System32*" -or $baseDir.Path -like "*\system32*" -or $baseDir.Path -eq "C:\Windows" -or $baseDir.Path -eq "C:\WINDOWS") {
-    $baseDir = Join-Path $env:USERPROFILE "Desktop\Minecraft-VR-Server"
-    $null = New-Item -ItemType Directory -Force -Path $baseDir
-    Set-Location $baseDir
-    Write-Host "${COLOR_INFO}[*] Запуск в системной папке обнаружен. Скрипт перенаправлен на Рабочий стол: $baseDir$COLOR_RESET"
+$defaultInstallDir = Get-Location
+if ($defaultInstallDir.Path -like "*\System32*" -or $defaultInstallDir.Path -like "*\system32*" -or $defaultInstallDir.Path -eq "C:\Windows" -or $defaultInstallDir.Path -eq "C:\WINDOWS") {
+    $defaultInstallDir = "C:\Minecraft-VR-Server"
+} else {
+    $defaultInstallDir = Join-Path $defaultInstallDir.Path "Minecraft-VR-Server"
 }
+
+Write-Host "`n${COLOR_BOLD}=== ВЫБОР ПАПКИ УСТАНОВКИ ===$COLOR_RESET"
+$targetDirInput = Get-Input "Введите путь для установки сервера" $defaultInstallDir
+
+# Create and set target directory
+$baseDir = [System.IO.Path]::GetFullPath($targetDirInput)
+$null = New-Item -ItemType Directory -Force -Path $baseDir
+Set-Location $baseDir
+Write-Host "${COLOR_SUCCESS}[✓] Папка установки установлена в: $baseDir$COLOR_RESET"
+
 $serverDir = Join-Path $baseDir "server"
 
 if (Handle-ExistingInstall $composeCmd $serverDir) {
@@ -378,9 +386,9 @@ Write-Host "`n$COLOR_BOLD=== НАСТРОЙКА MINECRAFT СЕРВЕРА ===$COL
 $mcVersion = Get-Input "Введите версию Minecraft" "1.20.1"
 
 Write-Host "`nВыберите ядро (мод-лоадер):"
-Write-Host "1) $COLOR_INFOFabric$COLOR_RESET (Рекомендуется для VR - лучшая совместимость и FPS)"
-Write-Host "2) $COLOR_INFOForge$COLOR_RESET"
-Write-Host "3) $COLOR_INFONeoForge$COLOR_RESET"
+Write-Host "1) ${COLOR_INFO}Fabric$COLOR_RESET (Рекомендуется для VR - лучшая совместимость и FPS)"
+Write-Host "2) ${COLOR_INFO}Forge$COLOR_RESET"
+Write-Host "3) ${COLOR_INFO}NeoForge$COLOR_RESET"
 $loaderChoice = Get-Input "Выберите вариант (1-3)" "1"
 
 $loaderType = "fabric"
